@@ -1,0 +1,4 @@
+variant,queries,exact_hits,semantic_hits,llm_calls,cache_hit_rate,avg_latency_all,avg_latency_llm,total_tokens_consumed,estimated_cost_usd,exact_match_rate,avg_string_similarity
+no_cache,95,0,0,95,0.0,0.3007,0.3007,2209,0.004418,0.0,0.3009
+exact,95,5,0,90,0.0526,0.285,0.3008,2129,0.004258,0.0526,0.3367
+semantic,95,5,81,9,0.9053,0.055,0.3612,168,0.000336,0.8947,0.9281

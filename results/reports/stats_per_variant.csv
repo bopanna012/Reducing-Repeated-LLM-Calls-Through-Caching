@@ -1,0 +1,4 @@
+variant,n_queries,mean_latency,std_latency,ci95_lo,ci95_hi,llm_calls,cache_hits
+no_cache,95,5.8919,2.8463,5.3121,6.4718,95,0
+exact,95,5.1381,2.3319,4.663,5.6131,90,5
+semantic,95,0.5438,1.6119,0.2155,0.8722,9,86

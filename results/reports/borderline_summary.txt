@@ -1,0 +1,23 @@
+BORDERLINE INSPECTION SUMMARY
+==================================================
+Threshold          : 0.5
+Borderline band    : [0.40, 0.60]  (+/- 0.1)
+
+ALL semantic hits (81 total):
+  CORRECT_REUSE    :  80  (98.8%)
+  ACCEPTABLE_REUSE :   0  (0.0%)  <- FLAG FOR MANUAL REVIEW
+  INCORRECT_REUSE  :   1  (1.2%)
+
+Borderline cases   : 1 / 81
+
+Rubric applied:
+  CORRECT_REUSE    : returned == gold (exact, case-insensitive)
+  ACCEPTABLE_REUSE : string_similarity >= 0.8 OR (sim >= 0.5 AND
+                     topic keyword overlap >= 0.4)
+  INCORRECT_REUSE  : string_similarity < 0.5 AND overlap < 0.4
+
+Multi-reviewer rule:
+  Two reviewers apply rubric independently. Disagreements escalated
+  to a third reviewer whose decision is final.
+
+Safety verdict: 1 incorrect reuse case(s) detected. Consider raising the threshold.

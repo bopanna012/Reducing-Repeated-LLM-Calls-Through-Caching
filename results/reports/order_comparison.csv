@@ -1,0 +1,4 @@
+run,n_queries,hits,hit_rate,mean_latency,std_latency,order
+fixed,95,86,0.9053,0.0729,0.0205,fixed
+shuffled_42,95,86,0.9053,0.0667,0.0165,shuffled_42
+shuffled_99,95,86,0.9053,0.0211,0.0269,shuffled_99

@@ -1,0 +1,1 @@
+{'threshold': 0.5, 'precision': 1.0, 'recall': 1.0, 'f1': 1.0, 'hits': 80.0}

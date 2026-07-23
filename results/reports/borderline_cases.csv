@@ -1,0 +1,2 @@
+query,matched_question,similarity,returned_answer,gold_answer,str_similarity_to_gold,judgment
+How do I obtain a student ID card?,How do I register for courses?,0.5149744153022766,Course registration is available through the student dashboard.,Student ID cards are issued by the administrative office on the joining day.,0.1871,INCORRECT_REUSE

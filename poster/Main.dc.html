@@ -1,0 +1,460 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
+  <style>
+    :root{
+      --forest:oklch(0.32 0.055 165);
+      --forest-2:oklch(0.40 0.06 165);
+      --teal:oklch(0.58 0.12 175);
+      --peach:oklch(0.78 0.13 55);
+      --peach-tint:oklch(0.94 0.045 60);
+      --peach-border:oklch(0.78 0.09 55);
+      --mint:oklch(0.975 0.012 150);
+      --card:oklch(1 0 0);
+      --ink:oklch(0.22 0.02 160);
+      --sub:oklch(0.47 0.02 160);
+      --line:oklch(0.89 0.015 150);
+      --mint-soft:oklch(0.95 0.02 150);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;}
+    a{color:var(--teal);text-decoration:none;}
+    a:hover{color:var(--forest);text-decoration:underline;}
+    .sec-head{padding:8px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:white;}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:5px;display:flex;flex-direction:column;overflow:hidden;}
+    .card-body{padding:13px 16px 15px;display:flex;flex-direction:column;gap:10px;flex:1;}
+    .num{font-family:'IBM Plex Mono',monospace;font-weight:700;}
+    .cap{font-size:10.5px;font-style:italic;color:var(--sub);line-height:1.35;}
+    .chip{width:21px;height:21px;border-radius:50%;color:white;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    table.cmp{border-collapse:collapse;width:100%;font-size:11.5px;}
+    table.cmp th{background:var(--forest);color:white;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;font-weight:700;padding:7px 8px;text-align:left;}
+    table.cmp td{padding:6px 8px;border-bottom:1px solid var(--line);}
+    table.cmp tr:nth-child(even) td{background:var(--mint-soft);}
+    table.cmp td.hi{background:var(--teal);color:white;font-weight:700;}
+    table.cmp tr:nth-child(even) td.hi{background:var(--teal);}
+  </style>
+</helmet>
+
+<div style="width:1600px;height:1680px;background:var(--mint);display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:var(--ink);">
+
+  <!-- HEADER -->
+  <div style="padding:20px 32px 14px;text-align:center;flex-shrink:0;">
+    <h1 style="margin:0;font-family:'Spectral',serif;font-weight:700;font-size:33px;line-height:1.15;color:var(--ink);">Reducing Repeated LLM Calls Through Caching</h1>
+    <div style="font-size:12px;color:var(--sub);margin-top:9px;letter-spacing:0.01em;">Manya Megharaj &nbsp;·&nbsp; Tejas Hosahalli Devaiah &nbsp;·&nbsp; Pradeep Singh Yadav &nbsp;·&nbsp; Yashu Bopanna Pasura Devaiah &nbsp;·&nbsp; Abhishek Gowda Thammanna Gowda</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--teal);margin-top:6px;letter-spacing:0.05em;text-transform:uppercase;">University FAQ Chatbot &nbsp;|&nbsp; Ollama Llama 3 · FAISS · all-MiniLM-L6-v2 &nbsp;|&nbsp; Caching Systems Study, 2026</div>
+  </div>
+  <div style="height:3px;background:var(--teal);flex-shrink:0;"></div>
+
+  <!-- BODY: 2 COLUMNS -->
+  <div style="flex:1;display:flex;gap:20px;padding:20px 28px;min-height:0;">
+
+    <!-- LEFT COLUMN -->
+    <div style="width:680px;display:flex;flex-direction:column;gap:16px;flex-shrink:0;">
+
+      <div class="card">
+        <div class="sec-head" style="background:var(--forest);">Background &amp; Research Questions</div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;gap:8px;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:6px;flex-shrink:0;"></div><div style="font-size:12px;line-height:1.4;">LLM called for every request — even exact duplicates</div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:6px;flex-shrink:0;"></div><div style="font-size:12px;line-height:1.4;">Paraphrased, reworded queries dominate real usage</div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:6px;flex-shrink:0;"></div><div style="font-size:12px;line-height:1.4;">Caching is proven in web engineering, underused in AI</div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:6px;flex-shrink:0;"></div><div style="font-size:12px;line-height:1.4;">Redundant inference has a real latency, cost and compute footprint</div></div>
+          </div>
+          <div style="border-top:1px solid var(--line);padding-top:9px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:4px;">Problem Overview</div>
+            <div style="font-size:12px;line-height:1.5;">LLM-backed FAQ systems routinely re-answer questions that only differ in wording — paying full inference cost and latency for a query the system has, in effect, already seen. This project puts a two-stage cache (exact match, then FAISS semantic search) in front of a local Llama&nbsp;3 model and measures how much redundant inference it removes.</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:6px;">Research Questions</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);">1</div>
+                <div style="font-size:12px;line-height:1.4;padding-top:2px;">What proportion of requests can be served from cache instead of the LLM?</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);">2</div>
+                <div style="font-size:12px;line-height:1.4;padding-top:2px;">How much do caching strategies reduce model calls, latency, and cost?</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);">3</div>
+                <div style="font-size:12px;line-height:1.4;padding-top:2px;">How does semantic caching compare with exact-match for answer quality and safe reuse?</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-head" style="background:var(--forest);">Methodology</div>
+        <div class="card-body">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:6px;">Dataset &amp; Query Set</div>
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px;">
+              <div class="num" style="font-size:26px;color:var(--forest);">95</div>
+              <div style="font-size:11.5px;color:var(--sub);line-height:1.3;">test queries, paraphrased from 115 original university FAQ entries</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div style="background:var(--mint-soft);border-radius:4px;padding:6px 8px;text-align:center;"><div class="num" style="font-size:15px;color:var(--teal);">5</div><div style="font-size:9px;color:var(--sub);line-height:1.25;">exact duplicates (5.3%)</div></div>
+              <div style="background:var(--mint-soft);border-radius:4px;padding:6px 8px;text-align:center;"><div class="num" style="font-size:15px;color:var(--teal);">81</div><div style="font-size:9px;color:var(--sub);line-height:1.25;">semantic matches (85.3%)</div></div>
+              <div style="background:var(--mint-soft);border-radius:4px;padding:6px 8px;text-align:center;"><div class="num" style="font-size:15px;color:var(--teal);">9</div><div style="font-size:9px;color:var(--sub);line-height:1.25;">no cache match (9.5%)</div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:6px;">Three System Variants</div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:4px;padding:6px 10px;">
+                <span style="font-size:11.5px;font-weight:600;">No-Cache Baseline</span>
+                <span class="num" style="font-size:11px;color:var(--sub);">95 calls · 5.89s avg</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:4px;padding:6px 10px;">
+                <span style="font-size:11.5px;font-weight:600;">Exact-Match Cache</span>
+                <span class="num" style="font-size:11px;color:var(--sub);">90 calls · 5.14s avg</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--teal);background:var(--mint-soft);border-radius:4px;padding:6px 10px;">
+                <span style="font-size:11.5px;font-weight:600;">Semantic Cache (FAISS)</span>
+                <span class="num" style="font-size:11px;color:var(--forest);">9 calls · 0.54s avg</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:6px;">Semantic Matching Pipeline</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;gap:9px;align-items:center;"><div class="chip" style="background:var(--forest);width:18px;height:18px;font-size:9px;">1</div><div style="font-size:11px;line-height:1.3;">Query received, normalized</div></div>
+              <div style="display:flex;gap:9px;align-items:center;"><div class="chip" style="background:var(--forest);width:18px;height:18px;font-size:9px;">2</div><div style="font-size:11px;line-height:1.3;">Exact-match cache checked first (normalized string compare)</div></div>
+              <div style="display:flex;gap:9px;align-items:center;"><div class="chip" style="background:var(--forest);width:18px;height:18px;font-size:9px;">3</div><div style="font-size:11px;line-height:1.3;">Miss → encoded with all-MiniLM-L6-v2 into a 384-dim vector</div></div>
+              <div style="display:flex;gap:9px;align-items:center;"><div class="chip" style="background:var(--forest);width:18px;height:18px;font-size:9px;">4</div><div style="font-size:11px;line-height:1.3;">FAISS flat index returns nearest neighbor + cosine score</div></div>
+              <div style="display:flex;gap:9px;align-items:center;"><div class="chip" style="background:var(--teal);width:18px;height:18px;font-size:9px;">5</div><div style="font-size:11px;line-height:1.3;">Score ≥ 0.50 → reuse cached answer; else call Llama&nbsp;3 &amp; cache it</div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11.5px;font-weight:700;margin-bottom:4px;">Threshold Sweep — F1, Precision &amp; Recall</div>
+            <div style="display:flex;gap:10px;font-size:9px;color:var(--sub);margin-bottom:2px;">
+              <span><svg width="12" height="3"><rect width="12" height="3" fill="var(--ink)"/></svg> precision</span>
+              <span><svg width="12" height="3"><rect width="12" height="3" fill="var(--peach)"/></svg> recall</span>
+              <span><svg width="12" height="3"><rect width="12" height="3" fill="var(--teal)"/></svg> f1</span>
+            </div>
+            <svg width="100%" height="120" viewBox="0 0 240 140">
+              <line x1="0" y1="120" x2="240" y2="120" stroke="var(--line)" stroke-width="1"/>
+              <text x="2" y="16" font-size="9" fill="var(--sub)">1.00</text>
+              <text x="2" y="124" font-size="9" fill="var(--sub)">0.80</text>
+              <polyline points="0,10 240,10" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+              <polyline points="0,10 53,10 107,10 160,10 213,10 219,10 224,16 230,29 235,48 240,91" fill="none" stroke="var(--peach)" stroke-width="2.2" stroke-linejoin="round"/>
+              <polyline points="0,10 53,10 107,10 160,10 213,10 219,10 224,13 230,20 235,30 240,54" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-linejoin="round"/>
+              <circle cx="0" cy="10" r="4" fill="var(--forest)"/>
+              <line x1="0" y1="10" x2="0" y2="120" stroke="var(--forest)" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="4" y="132" font-size="9" fill="var(--forest)" font-weight="700">chosen: 0.50</text>
+              <text x="213" y="136" font-size="9" text-anchor="middle" fill="var(--sub)">0.90</text>
+              <text x="240" y="136" font-size="9" text-anchor="end" fill="var(--sub)">0.95</text>
+            </svg>
+            <div class="cap">F1 holds at 1.00 up to ~0.91 cosine similarity — 0.50 sits safely on the plateau.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--peach-tint);border-color:var(--peach-border);">
+        <div class="card-body" style="padding:12px 16px;flex-direction:row;align-items:flex-start;gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0;margin-top:1px;"><path d="M9 2 L17 16 H1 Z" fill="none" stroke="var(--peach-border)" stroke-width="1.6" stroke-linejoin="round"/><line x1="9" y1="7" x2="9" y2="11" stroke="var(--peach-border)" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="13.4" r="1" fill="var(--peach-border)"/></svg>
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:oklch(0.50 0.12 55);margin-bottom:3px;">Borderline Failure Case</div>
+            <div style="font-size:11.5px;line-height:1.5;">1 of 81 semantic hits (1.2%) is an <b>incorrect reuse</b> despite clearing the 0.50 similarity gate — string similarity and topic overlap both stayed below the safe-reuse rubric. Safety verdict: consider raising the threshold for production use.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1;">
+        <div class="sec-head" style="background:var(--forest);">Reproducibility</div>
+        <div class="card-body">
+          <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            <div style="border:1px solid var(--teal);border-radius:999px;padding:4px 12px;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--forest);">Python 3.9+</div>
+            <div style="border:1px solid var(--teal);border-radius:999px;padding:4px 12px;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--forest);">Ollama · Llama 3</div>
+            <div style="border:1px solid var(--teal);border-radius:999px;padding:4px 12px;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--forest);">FAISS</div>
+            <div style="border:1px solid var(--teal);border-radius:999px;padding:4px 12px;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--forest);">Sentence-Transformers</div>
+          </div>
+          <div style="background:var(--forest);border-radius:5px;padding:10px 14px;display:flex;flex-direction:column;gap:5px;">
+            <div class="num" style="font-size:11px;color:oklch(0.85 0.03 150);">$ pip install -r requirements.txt</div>
+            <div class="num" style="font-size:11px;color:oklch(0.85 0.03 150);">$ ollama run llama3</div>
+            <div class="num" style="font-size:11px;color:white;">$ python main.py</div>
+          </div>
+          <div style="font-size:11px;line-height:1.5;color:var(--sub);">Benchmark: <span class="num" style="font-size:10.5px;color:var(--forest-2);">python evaluation/benchmark.py --shuffle --seed 42</span>. Set <span class="num" style="font-size:10.5px;color:var(--forest-2);">MOCK_LLM=1</span> to reproduce the results above without a live Ollama server.</div>
+          <div style="border-top:1px solid var(--line);padding-top:9px;font-size:11.5px;line-height:1.5;">All five research questions, threshold tuning, and the borderline-safety audit are reproducible from the evaluation suite — <span class="num" style="font-size:10.5px;">benchmark.py</span>, <span class="num" style="font-size:10.5px;">threshold_tests.py</span>, <span class="num" style="font-size:10.5px;">multi_run.py</span>, <span class="num" style="font-size:10.5px;">borderline_inspection.py</span>, <span class="num" style="font-size:10.5px;">rq_analysis.py</span> — against the same 95-query test set.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="width:844px;display:flex;flex-direction:column;gap:16px;flex-shrink:0;">
+
+      <div class="card">
+        <div class="sec-head" style="background:var(--forest);">Main Results</div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:4px;padding:10px 10px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="num" style="font-size:24px;color:var(--forest);">91%</div><div style="font-size:10px;color:var(--sub);line-height:1.3;">fewer LLM calls</div></div>
+              <svg width="40" height="22" viewBox="0 0 40 22"><rect x="2" y="0" width="7" height="22" fill="var(--teal)" opacity="0.85"/><rect x="14" y="1" width="7" height="21" fill="var(--teal)" opacity="0.6"/><rect x="26" y="20" width="7" height="2" fill="var(--teal)"/></svg>
+            </div>
+            <div style="border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:4px;padding:10px 10px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="num" style="font-size:24px;color:var(--forest);">11×</div><div style="font-size:10px;color:var(--sub);line-height:1.3;">faster latency</div></div>
+              <svg width="40" height="22" viewBox="0 0 40 22"><rect x="2" y="0" width="7" height="22" fill="var(--teal)" opacity="0.85"/><rect x="14" y="3" width="7" height="19" fill="var(--teal)" opacity="0.6"/><rect x="26" y="20" width="7" height="2" fill="var(--teal)"/></svg>
+            </div>
+            <div style="border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:4px;padding:10px 10px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div class="num" style="font-size:24px;color:var(--forest);">90.5%</div><div style="font-size:10px;color:var(--sub);line-height:1.3;">cache hit rate</div></div>
+              <svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="10" fill="none" stroke="var(--line)" stroke-width="3.5"/><circle cx="13" cy="13" r="10" fill="none" stroke="var(--teal)" stroke-width="3.5" stroke-dasharray="56.8 62.8" stroke-linecap="round" transform="rotate(-90 13 13)"/></svg>
+            </div>
+          </div>
+
+          <table class="cmp">
+            <tr><th>Metric</th><th>No Cache</th><th>Exact Cache</th><th>Semantic Cache</th></tr>
+            <tr><td>Cache hit rate</td><td>0%</td><td>5.3%</td><td class="hi">90.5%</td></tr>
+            <tr><td>LLM calls (of 95)</td><td>95</td><td>90</td><td class="hi">9</td></tr>
+            <tr><td>Avg latency</td><td>5.89 s</td><td>5.14 s</td><td class="hi">0.54 s</td></tr>
+            <tr><td>Latency 95% CI</td><td>[5.31, 6.47]</td><td>[4.66, 5.61]</td><td class="hi">[0.22, 0.87]</td></tr>
+            <tr><td>Est. cost / query</td><td>$0.0000465</td><td>$0.0000448</td><td class="hi">$0.0000035</td></tr>
+            <tr><td>Cost reduction vs. no-cache</td><td>—</td><td>2%</td><td class="hi">91%</td></tr>
+            <tr><td>Total tokens (test set)</td><td>2,209</td><td>2,129</td><td class="hi">168</td></tr>
+            <tr><td>Answer exact-match vs. gold</td><td>0%</td><td>5.3%</td><td class="hi">89.5%</td></tr>
+            <tr><td>String similarity vs. gold</td><td>0.30</td><td>0.34</td><td class="hi">0.93</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1;">
+        <div class="sec-head" style="background:var(--forest);">Trade-off Analysis — All Research Questions</div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+
+            <!-- Panel 1: stacked breakdown -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Request source breakdown</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="14" width="48" height="120" fill="var(--peach)"/>
+                <rect x="96" y="14" width="48" height="114" fill="var(--peach)"/>
+                <rect x="96" y="128" width="48" height="6" fill="var(--forest)"/>
+                <rect x="168" y="14" width="48" height="12" fill="var(--peach)"/>
+                <rect x="168" y="26" width="48" height="102" fill="var(--teal)"/>
+                <rect x="168" y="128" width="48" height="6" fill="var(--forest)"/>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">RQ1: 86/95 queries become cache hits.</div>
+            </div>
+
+            <!-- Panel 2: LLM calls per variant -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">LLM calls per variant</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="14" width="48" height="120" fill="var(--forest)"/>
+                <rect x="96" y="20" width="48" height="114" fill="var(--forest)"/>
+                <rect x="168" y="123" width="48" height="11" fill="var(--teal)"/>
+                <text x="48" y="10" font-size="10" font-weight="700" text-anchor="middle" fill="var(--ink)">95</text>
+                <text x="120" y="16" font-size="10" font-weight="700" text-anchor="middle" fill="var(--ink)">90</text>
+                <text x="192" y="118" font-size="10" font-weight="700" text-anchor="middle" fill="var(--teal)">9</text>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">RQ2: 91% fewer LLM calls.</div>
+            </div>
+
+            <!-- Panel 3: latency with CI -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Mean latency (95% CI)</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="25" width="48" height="109" fill="var(--forest)"/>
+                <line x1="48" y1="14" x2="48" y2="36" stroke="var(--ink)" stroke-width="1.4"/>
+                <rect x="96" y="39" width="48" height="95" fill="var(--forest)"/>
+                <line x1="120" y1="30" x2="120" y2="48" stroke="var(--ink)" stroke-width="1.4"/>
+                <rect x="168" y="124" width="48" height="10" fill="var(--teal)"/>
+                <line x1="192" y1="118" x2="192" y2="130" stroke="var(--ink)" stroke-width="1.4"/>
+                <text x="48" y="8" font-size="10" font-weight="700" text-anchor="middle" fill="var(--ink)">5.89s</text>
+                <text x="120" y="24" font-size="10" font-weight="700" text-anchor="middle" fill="var(--ink)">5.14s</text>
+                <text x="192" y="112" font-size="10" font-weight="700" text-anchor="middle" fill="var(--teal)">0.54s</text>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">RQ2: 11× speedup.</div>
+            </div>
+
+            <!-- Panel 4: answer quality -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Answer quality vs. gold</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="27" y="134" width="20" height="0" fill="var(--forest)"/>
+                <rect x="49" y="98" width="20" height="36" fill="var(--teal)"/>
+                <rect x="99" y="128" width="20" height="6" fill="var(--forest)"/>
+                <rect x="121" y="94" width="20" height="40" fill="var(--teal)"/>
+                <rect x="171" y="27" width="20" height="107" fill="var(--forest)"/>
+                <rect x="193" y="23" width="20" height="111" fill="var(--teal)"/>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">RQ3: 89.5% exact-match vs. gold.</div>
+            </div>
+
+            <!-- Panel 5: threshold sweep (f1 only, compact) -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Threshold sweep — F1</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="120" x2="240" y2="120" stroke="var(--line)" stroke-width="1"/>
+                <text x="2" y="14" font-size="8.5" fill="var(--sub)">1.00</text>
+                <text x="2" y="124" font-size="8.5" fill="var(--sub)">0.90</text>
+                <polyline points="0,10 53,10 107,10 160,10 213,10 219,10 224,17 230,31 235,53 240,107" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linejoin="round"/>
+                <circle cx="0" cy="10" r="3.5" fill="var(--forest)"/>
+                <text x="213" y="148" font-size="8.5" text-anchor="middle" fill="var(--sub)">0.90</text>
+                <text x="240" y="148" font-size="8.5" text-anchor="end" fill="var(--sub)">0.95</text>
+              </svg>
+              <div class="cap">Threshold=0.50 sits on the plateau.</div>
+            </div>
+
+            <!-- Panel 6: order independence -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Latency across query order</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="46" width="48" height="88" fill="var(--teal)"/>
+                <line x1="48" y1="22" x2="48" y2="71" stroke="var(--ink)" stroke-width="1.4"/>
+                <rect x="96" y="54" width="48" height="80" fill="var(--teal)"/>
+                <line x1="120" y1="34" x2="120" y2="74" stroke="var(--ink)" stroke-width="1.4"/>
+                <rect x="168" y="109" width="48" height="25" fill="var(--teal)"/>
+                <line x1="192" y1="76" x2="192" y2="134" stroke="var(--ink)" stroke-width="1.4"/>
+                <text x="48" y="148" font-size="9" text-anchor="middle" fill="var(--sub)">fixed</text>
+                <text x="120" y="148" font-size="9" text-anchor="middle" fill="var(--sub)">seed 42</text>
+                <text x="192" y="148" font-size="9" text-anchor="middle" fill="var(--sub)">seed 99</text>
+              </svg>
+              <div class="cap">Q4: hit rate constant at 90.5% in every order.</div>
+            </div>
+
+            <!-- Panel 7: cost per query -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Estimated cost per query</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="14" width="48" height="120" fill="var(--forest)"/>
+                <rect x="96" y="18" width="48" height="116" fill="var(--forest)"/>
+                <rect x="168" y="125" width="48" height="9" fill="var(--teal)"/>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">$0.0000465 → $0.0000035 per query (−91%).</div>
+            </div>
+
+            <!-- Panel 8: tokens consumed -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Total tokens consumed</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <line x1="0" y1="134" x2="240" y2="134" stroke="var(--line)" stroke-width="1"/>
+                <rect x="24" y="14" width="48" height="120" fill="var(--teal)"/>
+                <rect x="96" y="18" width="48" height="116" fill="var(--teal)"/>
+                <rect x="168" y="125" width="48" height="9" fill="var(--forest)"/>
+                <text x="48" y="10" font-size="9.5" font-weight="700" text-anchor="middle" fill="var(--ink)">2,209</text>
+                <text x="120" y="14" font-size="9.5" font-weight="700" text-anchor="middle" fill="var(--ink)">2,129</text>
+                <text x="192" y="120" font-size="9.5" font-weight="700" text-anchor="middle" fill="var(--forest)">168</text>
+                <text x="48" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">no_cache</text>
+                <text x="120" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">exact</text>
+                <text x="192" y="148" font-size="9.5" text-anchor="middle" fill="var(--sub)">semantic</text>
+              </svg>
+              <div class="cap">Token use tracks LLM calls almost exactly.</div>
+            </div>
+
+            <!-- Panel 9: borderline safety donut -->
+            <div style="border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:10.5px;font-weight:700;">Borderline safety check</div>
+              <svg width="100%" height="118" viewBox="0 0 240 154">
+                <circle cx="60" cy="67" r="42" stroke="var(--line)" stroke-width="14" fill="none"/>
+                <circle cx="60" cy="67" r="42" stroke="var(--teal)" stroke-width="14" fill="none" stroke-dasharray="260 264" stroke-linecap="round" transform="rotate(-90 60 67)"/>
+                <text x="60" y="63" font-size="16" font-weight="700" text-anchor="middle" fill="var(--forest)">98.8%</text>
+                <text x="60" y="78" font-size="8" text-anchor="middle" fill="var(--sub)">correct</text>
+                <text x="118" y="48" font-size="9.5" font-weight="600" fill="var(--ink)">80/81 correct reuse</text>
+                <text x="118" y="65" font-size="9.5" font-weight="600" fill="oklch(0.55 0.15 45)">1/81 flagged (unsafe)</text>
+                <text x="118" y="86" font-size="8.5" fill="var(--sub)">Verdict: consider a</text>
+                <text x="118" y="97" font-size="8.5" fill="var(--sub)">stricter threshold.</text>
+              </svg>
+              <div class="cap">1 semantic hit returned a factually wrong answer.</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-head" style="background:var(--forest);">Discussion &amp; Conclusion</div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--forest-2);margin-bottom:2px;">Why the hit rate is so high (90.5%)</div>
+              <div style="font-size:11.5px;line-height:1.45;">FAQ questions cluster into a small set of underlying intents; template paraphrasing stays semantically close to the cached originals, so a 0.50 cosine threshold catches nearly all of them.</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--forest-2);margin-bottom:2px;">Semantic similarity ≠ semantic correctness</div>
+              <div style="font-size:11.5px;line-height:1.45;">1 of 81 semantic hits (1.2%) reused a factually wrong answer despite clearing the similarity gate — embedding distance is a proxy for meaning, not a guarantee of it.</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--forest-2);margin-bottom:2px;">When do we need semantic caching?</div>
+              <div style="font-size:11.5px;line-height:1.45;">Exact-match alone is close to useless once users reword questions (5.3% hit rate); semantic caching is what actually absorbs paraphrase traffic in a live FAQ system.</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--forest-2);margin-bottom:2px;">Limitations</div>
+              <div style="font-size:11.5px;line-height:1.45;">Template paraphrases, a small 115-entry FAQ set, one embedding model, and local inference — results may shift with real user phrasing or a larger corpus.</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--line);padding-top:9px;margin-top:2px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--forest-2);margin-bottom:7px;">Conclusion — Key Research Findings</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);font-size:9.5px;">RQ1</div>
+                <div style="font-size:11.5px;line-height:1.4;padding-top:2px;"><b>90.5%</b> of paraphrased queries are served from cache without touching the LLM.</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);font-size:9.5px;">RQ2</div>
+                <div style="font-size:11.5px;line-height:1.4;padding-top:2px;">Caching cuts LLM calls <b>91%</b>, latency <b>11×</b>, and estimated cost <b>91%</b> vs. calling the model every time.</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="chip" style="background:var(--teal);font-size:9.5px;">RQ3</div>
+                <div style="font-size:11.5px;line-height:1.4;padding-top:2px;">Semantic-cache answers match gold <b>89.5%</b> of the time — far above exact-match's 5.3% — with one flagged unsafe reuse in 81 hits.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-head" style="background:var(--forest);">References</div>
+        <div class="card-body" style="flex-direction:row;flex-wrap:wrap;gap:6px 20px;padding:11px 16px;">
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[1]</span> all-MiniLM-L6-v2 sentence embeddings — sentence-transformers</div>
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[2]</span> FAISS — Facebook AI Similarity Search</div>
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[3]</span> Ollama — local Llama 3 (8B, Q4_0) inference</div>
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[4]</span> University FAQ dataset — project-collected, 115 Q&amp;A pairs</div>
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[5]</span> Reimers &amp; Gurevych (2019) — Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</div>
+          <div style="font-size:10.5px;line-height:1.4;"><span class="num" style="color:var(--teal);">[6]</span> Johnson, Douze &amp; Jégou (2017) — Billion-scale similarity search with GPUs (FAISS)</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="height:30px;background:var(--forest);display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,0.82);">Repo: github.com/manya-25/Reducing-Repeated-LLM-Calls-Through-Caching</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,0.82);">MIT License</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
